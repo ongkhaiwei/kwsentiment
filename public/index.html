@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <title>How Node.js + Watson + LightBlue Bean work together</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.0/jquery-ui.css">
+    <script   src="https://code.jquery.com/jquery-1.12.4.min.js"   integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="   crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  </head>
+
+  <body>
+
+    <div class="container">
+        <div class="page-header">
+        <h1>Khai Wei's Sentiment Integration Demo</h1>
+        <p class="lead">Node.js + Watson + LightBlue Bean</p>
+        </div>
+
+        <p>Enter your text into the textbox:</p>
+        <textarea id="bodytext" name="bodytext" class="form-control" rows="5" cols="150"></textarea>
+        <br/>
+        <button type="button" class="btn btn-lg btn-primary" onclick="javascript: processURL()"/>Process</button>
+        <h2><span id="result"></span></h2>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Current Geolocation</h1>
+        </div>
+        <p><h2><span id="geoloc"><img src="images/spin.gif"></span></h2></p>
+    </div>
+    <div class="container">
+        <div class="page-header">
+          <h1>Current weather information</h1>
+        </div>
+        <p><h2><span id="weather"><img src="images/spin.gif"></span></h2></p>
+        <p>Custom Location:
+        <p>Latitude,Longitude: <input id="lati" name="lati"/></p>
+        <button type="button" class="btn btn-lg btn-primary" onclick="javascript: getCustomWeather()"/>Get Weather!</button>
+    </div>
+
+    <script>
+
+      function processURL() {
+        $.ajax({
+          type: 'POST',
+          url: '/sentiment?bodytext='+$('#bodytext').val(),
+          success: function(data) {
+            console.log(data.label);
+            console.log(data.score);
+            $('#result').html(JSON.stringify(data));
+
+          },
+          error: function(err) {
+            console.error(JSON.stringify(err));
+          }
+
+        });
+      }
+
+      function getCustomWeather() {
+
+        var loc = $('#lati').val().split(',');
+        var data = { latitude: loc[0], longitude: loc[1] };
+        getWeather(data);
+
+      }
+
+      function getWeather(data) {
+
+        $.ajax({
+          type: 'POST',
+          url: '/api/observations/current?latitude='+data.latitude+'&longitude='+data.longitude,
+          data: data,
+          success: function(data) {
+            console.log(JSON.stringify(data));
+            $('#weather').html(data.wx_phrase + " - " + data.temp);
+
+          },
+          error: function(err) {
+            console.error(JSON.stringify(err));
+          }
+
+        });
+      }
+
+      function getLocation() {
+          if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(showPosition);
+          } else {
+              $('#geoloc').html("Geolocation is not supported by this browser.");
+          }
+      }
+
+      function showPosition(position) {
+
+        $('#geoloc').html("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
+        var data = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+        getWeather(data);
+      }
+
+      getLocation();
+
+      </script>
+  </body>
+
+</html>
